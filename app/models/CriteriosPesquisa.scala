@@ -1,6 +1,7 @@
 package models
 
 import configuracao.ParametrosDeExecucao
+import play.api.libs.json.JsValue
 
 //Cria um trait para critério
 trait CriterioDePesquisa{
@@ -38,13 +39,13 @@ case class CriterioNomeContendo(fragNome: String) extends CriterioDePesquisa{
   }
 }
 object ExtratorDeCriterios {
-  def extraia(form: Map[String, Seq[String]]): Either[String, List[CriterioDePesquisa]] = {
+  def extraia(form: JsValue): Either[String, List[CriterioDePesquisa]] = {
     var listaCriterios = List[CriterioDePesquisa]()
     try{
-	    val alturaMinima = form("altura-minima")(0).toInt
-	    val alturaMaxima = form("altura-maxima")(0).toInt
-	    val nome = form("nome")(0)
-	    val sexo = form("sexo")(0)
+	    val alturaMinima = (form \ "altura-minima").as[Int]
+	    val alturaMaxima = (form \ "altura-maxima").as[Int]
+	    val nome = (form \ "nome").as[String]
+	    val sexo = (form \ "sexo").as[String]
 	    if(nome == "" && sexo == "" && alturaMaxima == 0 && alturaMinima == 0)
 	      Left("Especifique ao menos um filtro")
 	    else if(sexo != "" && sexo != "F" && sexo != "M")
@@ -56,9 +57,8 @@ object ExtratorDeCriterios {
 	        listaCriterios = listaCriterios :+ CriterioSexo(sexo.toCharArray()(0))
 	      if(alturaMinima != 0 || alturaMaxima != 0)
 	        listaCriterios = listaCriterios :+ CriterioAltura(
-	            if alturaMinima == 0 None else Some(alturaMinima),
-	            if alturaMaxima == 0 None else Some(alturaMaxima)
-	        )
+	            if (alturaMinima == 0) None else Some(alturaMinima), 
+	            if (alturaMaxima == 0) None else Some(alturaMaxima))
 	      Right(listaCriterios)
 	    }
     } catch {

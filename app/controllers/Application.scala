@@ -3,15 +3,26 @@ package controllers
 import play.api._
 import play.api.mvc._
 import akka.util.Timeout
+import akka.pattern.ask
 import configuracao.ParametrosDeExecucao
 import play.libs.Akka
 import models.atores.RepositorioPessoas
 import akka.actor.Props
 import models.atores.RegistroDesejos
-import scala.concurrent.duration.`package`.DurationInt
+import scala.concurrent.duration._
+import models.ExtratorDeCriterios
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
+import scala.concurrent.Future
+import play.api.libs.json.Json
+import models.atores.Pesquisador
+import models.Pessoa
+import akka.actor.PoisonPill
 
 object Application extends Controller {
 
+  implicit val context = scala.concurrent.ExecutionContext.Implicits.global
   import play.api.Play.current
   
   
@@ -33,7 +44,7 @@ object Application extends Controller {
       case Right(criterios) => {
         val pesquisador = Akka.system.actorOf(Pesquisador.props(criterios, repositorio, registroDesejos))
 
-        val futResp = (pesquisador ? Pesquisador.Pesquise).mapTo[Pesquisador.PessoasEncontradas]
+        val futResp = (pesquisador ? Pesquisador.Pesquisar).mapTo[Pesquisador.PessoasEncontradas]
 
         val resultado = futResp.map(msg => {
           val r = for (pessoa <- msg.pessoas) yield Pessoa.toJson(pessoa)
@@ -68,11 +79,11 @@ object Application extends Controller {
     valideCPF(request.getQueryString("cpf")) match {
       case Left(msgErro) => Future.successful(Ok(Json.obj("cod" -> "NOK", "erro" -> msgErro)))
       case Right(cpf) => {
-        val futResp = (cadastro ? Cadastro.LeiaPessoa(cpf)).mapTo[Cadastro.RespostaCadastro]
+        val futResp = (repositorio ? RepositorioPessoas.Get(cpf)).mapTo[RepositorioPessoas.RespostaRepositorio]
 
         val resultado = futResp.map(resp => resp match {
-          case Cadastro.PessoaNaoCadastrada(cpf) => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não existe pessoa com este CPF"))
-          case Cadastro.PessoaLida(pessoa) => Ok(Json.obj("cod" -> "OK", "pessoa" -> Pessoa.toJson(pessoa)))
+          case RepositorioPessoas.PessoaNaoCadastrada(cpf) => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não existe pessoa com este CPF"))
+          case RepositorioPessoas.PessoaLida(pessoa) => Ok(Json.obj("cod" -> "OK", "pessoa" -> Pessoa.toJson(pessoa)))
         }) recover {
           case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu ler"))
         }

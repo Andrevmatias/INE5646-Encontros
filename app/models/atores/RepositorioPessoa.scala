@@ -43,7 +43,7 @@ object RepositorioPessoas {
 }
 
 
-class RepositorioPessoas extends Actor {
+class RepositorioPessoas(qtdMaximaPessoas: Int) extends Actor {
 
   //Import tudo de RepositorioPessoas
   import models.atores.RepositorioPessoas._
@@ -52,7 +52,7 @@ class RepositorioPessoas extends Actor {
   
   def receive = {
     case Save(pessoa) => {
-      if (pessoas.size == ParametrosDeExecucao.maximoPessoas){
+      if (pessoas.size == qtdMaximaPessoas){
         sender ! MaximoPessoasAtingido
       } else if (pessoas.contains(pessoa.cpf)){
         sender ! PessoaJaCadastrada(pessoas(pessoa.cpf))

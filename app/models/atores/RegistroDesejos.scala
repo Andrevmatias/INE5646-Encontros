@@ -1,16 +1,15 @@
 package models.atores
 
 import scala.annotation.migration
-import akka.actor.Actor
-import akka.actor.Props
-import akka.actor.actorRef2Scala
-import configuracao.ParametrosDeExecucao
-import models.Pessoa
-import play.libs.Akka
-import akka.actor.ActorRef
-import models.PessoaDesejada
+import scala.concurrent.duration._
+
 import org.omg.CORBA.Object
-import scala.concurrent.Future
+
+import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
+import models.PessoaDesejada
+import play.api.libs.concurrent.Akka
 
 //Objeto de "recursos" para o ator RegistroDesejos
 object RegistroDesejos {
@@ -20,7 +19,7 @@ object RegistroDesejos {
    * Como não é possível ter acesso ao construtor do ator, passa-se um objeto Props para o Factory de atores
    * (system.actorOf()) com os parâmetros de inicialização
    */
-  def props(repositorioPessoas: ActorRef) = Props(classOf[RepositorioPessoas], repositorioPessoas: ActorRef)
+  def props(repositorioPessoas: ActorRef) = Props(classOf[RegistroDesejos], repositorioPessoas: ActorRef)
 
   //Trait para classificação de respostas
   trait RespostaRegistroDesejos
@@ -28,7 +27,7 @@ object RegistroDesejos {
   //Mensagens disponíveis e
   //Respostas possíveis
   //------------------------------------------
-  case class RegistreDesejos(cpfs: List[Int])
+  case class RegistreDesejos(cpfs: List[Long])
   
   case object PessoasDesejadasAoMenosUmaVez
   case class PessoasDesejadas(pessoas: List[PessoaDesejada])
@@ -44,23 +43,25 @@ object RegistroDesejos {
 
 class RegistroDesejos(repositorioPessoas: ActorRef) extends Actor {
   import RegistroDesejos._
-
+  import play.api.Play.current
+  
   // cpf da pessoa -> quantas vezes uma pessoa com aquele CPF foi desejada
   // se um CPF não está cadastrado então o valor retornado deve ser zero
-  var desejosPorCPF = Map[Int, Int]().withDefaultValue(0)
+  var desejosPorCPF = Map[Long, Int]().withDefaultValue(0)
 
   def receive = {
     case RegistreDesejos(cpfs) => cpfs.foreach(cpf => desejosPorCPF += cpf -> (desejosPorCPF(cpf) + 1))
     case Clear => { desejosPorCPF = Map() }
     case Count => sender ! QuantidadeDePessoasDesejadas(desejosPorCPF.size)
     case PessoasDesejadasAoMenosUmaVez => { 
-        Future.traverse(desejosPorCPF)((cpf, desejos) => 
-        	  (repositorioPessoas ? RepositorioPessoas.Get(cpf)).map(e => e match {
-        	  	  case RepositorioPessoas.PessoaLida(pessoa) => PessoaDesejada(pessoa, desejos)
-    	  	  }))
-        	.map(resp => { 
-        	  sender ! PessoasDesejadas(resp.toList())
-        	})
+      implicit val context = Akka.system.dispatcher
+      implicit val timeout = Timeout(10 seconds)
+      (repositorioPessoas ? RepositorioPessoas.List).mapTo[RepositorioPessoas.RespostaRepositorio].map(e => e match {
+        case RepositorioPessoas.PessoasCadastradas(pessoas) => {
+          val pessoasDesejadas = pessoas.map(pessoa => PessoaDesejada(pessoa, desejosPorCPF(pessoa.cpf)))
+          sender ! PessoasDesejadas(pessoasDesejadas)
+        }
+      })
     }
   }
 
