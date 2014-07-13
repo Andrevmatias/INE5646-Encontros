@@ -24,9 +24,11 @@ object RepositorioPessoas {
   //Respostas possíveis
   //------------------------------------------
   case class Save(pessoa: Pessoa)
-  case object PessoaCadastrada
-  case object MaximoPessoasAtingido
-  case class PessoaJaCadastrada(pessoa: Pessoa)
+  case object PessoaCadastrada extends RespostaRepositorio
+  case object MaximoPessoasAtingido extends RespostaRepositorio
+  case class AlturaForaDosLimites(minima: Int, maxima: Int) extends RespostaRepositorio
+  case class PessoaJaCadastrada(pessoa: Pessoa) extends RespostaRepositorio
+  case class PessoaComMesmoNomeDesenvolvedor(nomeDesenvolvedor: String) extends RespostaRepositorio
   
   case class Get(cpf: Long)
   case class PessoaLida(pessoa: Pessoa) extends RespostaRepositorio
@@ -39,7 +41,10 @@ object RepositorioPessoas {
   case class PessoasRemovidas(qtd: Int) extends RespostaRepositorio
   
   case object List
-  case class PessoasCadastradas(pessoas: List[Pessoa]) extends RespostaRepositorio
+  //PessoasLidas(pessoa: Iterable[Pessoa])
+  
+  case object Count
+  case class QuantidadePessoas(qtd: Int)
   //------------------------------------------
 }
 
@@ -55,6 +60,10 @@ class RepositorioPessoas(qtdMaximaPessoas: Int) extends Actor {
     case Save(pessoa) => {
       if (pessoas.size == qtdMaximaPessoas){
         sender ! MaximoPessoasAtingido
+      } else if (pessoa.altura > ParametrosDeExecucao.alturaMaxima || pessoa.altura < ParametrosDeExecucao.alturaMinima) {
+        sender ! AlturaForaDosLimites(ParametrosDeExecucao.alturaMinima, ParametrosDeExecucao.alturaMaxima)
+      } else if (pessoa.nome == ParametrosDeExecucao.nomeDesenvolvedor) {
+        sender ! PessoaComMesmoNomeDesenvolvedor(ParametrosDeExecucao.nomeDesenvolvedor)
       } else if (pessoas.contains(pessoa.cpf)){
         sender ! PessoaJaCadastrada(pessoas(pessoa.cpf))
       }else{
@@ -82,6 +91,7 @@ class RepositorioPessoas(qtdMaximaPessoas: Int) extends Actor {
       sender ! PessoasLidas(pessoasCadastradas)
     }
 
-    case List => sender ! PessoasCadastradas(pessoas.values.toList)
+    case List => sender ! PessoasLidas(pessoas.values)
+    case Count => sender ! QuantidadePessoas(pessoas.size)
   } 
 }

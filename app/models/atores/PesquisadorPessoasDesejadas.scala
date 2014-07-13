@@ -29,7 +29,7 @@ object PesquisadorPessoasDesejadas {
   //Respostas possíveis
   //------------------------------------------
   case object PessoasDesejadasAoMenosUmaVez
-  case class PessoasDesejadas(pessoas: Iterable[PessoaDesejada])
+  case class PessoasDesejadas(pessoas: Iterable[PessoaDesejada]) extends RespostaPesquisadorPessoasDesejadas
   
   case class PessoasMaisDesejadas(qtd: Int)
   //PessoasDesejadas(pessoas: Iterable[PessoaDesejada])

@@ -1,25 +1,29 @@
 package controllers
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Try
+import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.pattern.ask
+import akka.util.Timeout
+import configuracao.ParametrosDeExecucao
+import models.ExtratorDeCriterios
+import models.Pessoa
+import models.atores.Pesquisador
+import models.atores.RegistroDesejos
+import models.atores.RepositorioPessoas
 import play.api._
 import play.api.mvc._
-import akka.util.Timeout
-import akka.pattern.ask
-import configuracao.ParametrosDeExecucao
 import play.libs.Akka
-import models.atores.RepositorioPessoas
-import akka.actor.Props
-import models.atores.RegistroDesejos
-import scala.concurrent.duration._
-import models.ExtratorDeCriterios
-import scala.util.Try
-import scala.util.Failure
-import scala.util.Success
-import scala.concurrent.Future
-import play.api.libs.json.Json
-import models.atores.Pesquisador
-import models.Pessoa
-import akka.actor.PoisonPill
 import utils.CpfUtils
+import controllers.Reads._
+import play.api.libs.json.JsError
+import play.api.libs.json.Json
+import play.api.libs.json.JsSuccess
+import models.atores.PesquisadorPessoasDesejadas
+import models.PessoaDesejada
+import models.atores.GeradorPessoas
 
 object Application extends Controller {
 
@@ -79,5 +83,137 @@ object Application extends Controller {
 
       }
     }
+  }
+  
+  def cadastre = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 seconds)
+
+    val form = request.body.asJson.get
+    form.validate[Pessoa] match {
+      case JsError(erros) => Future.successful(Ok(Json.obj("cod" -> "NOK", "erro" -> "Existem valores inválidos")))
+      case JsSuccess(pessoa, _) => {
+        val futResp = (repositorio ? RepositorioPessoas.Save).mapTo[RepositorioPessoas.RespostaRepositorio]
+        futResp.map(msg => msg match {
+          case RepositorioPessoas.PessoaCadastrada => Ok(Json.obj("cod" -> "OK"))
+		  case RepositorioPessoas.MaximoPessoasAtingido => 
+		    Ok(Json.obj("cod" -> "NOK", "erro" -> "O máximo de pessoas cadastradas foi atingido"))
+		  case RepositorioPessoas.AlturaForaDosLimites(minima, maxima) => 
+		    Ok(Json.obj("cod" -> "NOK", "erro" -> s"A altura está fora dos limtes: $minima - $maxima"))
+		  case RepositorioPessoas.PessoaJaCadastrada(pessoa) => 
+		    Ok(Json.obj("cod" -> "NOK", "erro" -> "Pessoa já cadastrada", "pessoa" -> Pessoa.toJson(pessoa)))
+		  case RepositorioPessoas.PessoaComMesmoNomeDesenvolvedor(nomeDesenvolvedor) => 
+		    Ok(Json.obj("cod" -> "NOK", "erro" -> s"O desenvolvedor não pode ser cadastrado: $nomeDesenvolvedor"))
+        }).recover {
+          case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu cadastrar"))
+        }
+      }
+    }
+  }
+  
+  def listeMaisDesejadas = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 second)
+    request.getQueryString("qtd") match {
+      case None => Future { Ok(Json.obj("cod" -> "NOK", "erro" -> "Digite uma quantidade válida")) }
+      case Some(qtd) => {
+        val pesquisador = Akka.system.actorOf(PesquisadorPessoasDesejadas.props(repositorio, registroDesejos))
+        val futResp = (pesquisador ? PesquisadorPessoasDesejadas.PessoasMaisDesejadas(qtd.toInt))
+        	.mapTo[PesquisadorPessoasDesejadas.RespostaPesquisadorPessoasDesejadas]
+        futResp.map(msg => msg match {
+          case PesquisadorPessoasDesejadas.PessoasDesejadas(pessoasDesejadas) => {
+	           val r = for (pessoa <- pessoasDesejadas) yield PessoaDesejada.toJson(pessoa)
+	           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
+          }
+        })
+      }
+    }
+  }
+  
+  def listeTodas = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 second)
+    val futResp = (repositorio ? RepositorioPessoas.List).mapTo[RepositorioPessoas.RespostaRepositorio]
+    futResp.map(msg => msg match {
+      case RepositorioPessoas.PessoasLidas(pessoas) => {
+          val r = for (pessoa <- pessoas) yield Pessoa.toJson(pessoa)
+          Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
+      }
+    })
+  }
+  
+  def desejadasAoMenosUmaVez = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 second)
+
+    val pesquisador = Akka.system.actorOf(PesquisadorPessoasDesejadas.props(repositorio, registroDesejos))
+    val futResp = (pesquisador ? PesquisadorPessoasDesejadas.PessoasDesejadasAoMenosUmaVez)
+    	.mapTo[PesquisadorPessoasDesejadas.RespostaPesquisadorPessoasDesejadas]
+    futResp.map(msg => msg match {
+      case PesquisadorPessoasDesejadas.PessoasDesejadas(pessoasDesejadas) => {
+           val r = for (pessoa <- pessoasDesejadas) yield PessoaDesejada.toJson(pessoa)
+           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
+      }
+    }).recover {
+      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu recuperar desejados"))
+    }
+  }
+  
+  def gerePessoas = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 seconds)
+
+    val form = request.body.asJson.get
+    form.validate[Int] match {
+      case JsError(erros) => Future.successful(Ok(Json.obj("cod" -> "NOK", "erro" -> "Quantidade inválida")))
+      case JsSuccess(qtd, _) => {
+        val gerador = Akka.system.actorOf(GeradorPessoas.props(repositorio, ParametrosDeExecucao.maximoPessoasGeradas))
+        val futResp = (gerador ? GeradorPessoas.Gerar(qtd)).mapTo[GeradorPessoas.RespostaGeradorPessoas]
+	    futResp.map(msg => msg match {
+	      case GeradorPessoas.QuantidadeExcedeuMaximo(maximo) => 
+	        Ok(Json.obj("cod" -> "NOK", "erro" -> s"A quantidade não pode passar de $maximo"))
+	      case GeradorPessoas.PessoasRegistradas(qtdGeradas) => {
+	           Ok(Json.obj("cod" -> "OK", "qtdGeradas" -> qtdGeradas))
+	      }
+	    }).recover {
+	      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu gerar pessoas"))
+	    }
+      }
+    }
+  }
+  
+  def mostreEstatisticas = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 second)
+
+    (for{
+    	respRep <- (repositorio ? RepositorioPessoas.Count).mapTo[RepositorioPessoas.QuantidadePessoas]
+    	respDesej <- (registroDesejos ? RegistroDesejos.Count).mapTo[RepositorioPessoas.QuantidadePessoas]
+    } yield {
+      Ok(Json.obj("cod" -> "OK", "qtdPessoas" -> respRep.qtd, "qtdPesquisadas" -> respDesej.qtd))
+    }).recover {
+      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu recuperar estatísticas"))
+    }
+  }
+  
+  def mostreInformacoesSistema = Action { implicit request =>
+    Ok(Json.toJson(ParametrosDeExecucao.toJson))
+  }
+  
+  def apaguePessoas = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 second)
+
+    (for{
+    	respDesej <- (registroDesejos ? RegistroDesejos.Clear)
+    	respRep <- (repositorio ? RepositorioPessoas.Clear).mapTo[RepositorioPessoas.PessoasRemovidas]
+    } yield {
+      Ok(Json.obj("cod" -> "OK", "qtdPessoas" -> respRep.qtd))
+    }).recover {
+      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu apagar"))
+    }
+  }
+  
+  def apaguePesquisas = Action.async { implicit request =>
+    implicit val timeout = Timeout(10 second)
+
+    (registroDesejos ? RegistroDesejos.Clear).mapTo[RegistroDesejos.DesejosRemovidos]
+		.map(msg => Ok(Json.obj("cod" -> "OK", "qtdPessoas" -> msg.qtd)))
+		.recover {
+	      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu apagar"))
+	    }
   }
 }

@@ -29,7 +29,7 @@ object RegistroDesejos {
   case class RegistreDesejos(cpfs: List[Long])
   
   case object Count
-  case class QuantidadeDePessoasDesejadas(qtd: Int)
+  case class QuantidadePessoasDesejadas(qtd: Int)
   
   case object Clear
   case class DesejosRemovidos(qtd: Int)
@@ -53,8 +53,12 @@ class RegistroDesejos(repositorioPessoas: ActorRef) extends Actor {
 
   def receive = {
     case RegistreDesejos(cpfs) => cpfs.foreach(cpf => desejosPorCPF += cpf -> (desejosPorCPF(cpf) + 1))
-    case Clear => { desejosPorCPF = Map() }
-    case Count => sender ! QuantidadeDePessoasDesejadas(desejosPorCPF.size)
+    case Clear => {
+      val numeroDesejos = desejosPorCPF.size
+      desejosPorCPF = Map() 
+      sender ! DesejosRemovidos(numeroDesejos)
+    }
+    case Count => sender ! QuantidadePessoasDesejadas(desejosPorCPF.size)
     case List => DesejosRegistrados(desejosPorCPF)
     case ListMaisDesejadas(qtd) => DesejosRegistrados(ListMap(desejosPorCPF.toList sortBy {_._2} take(qtd):_*))
   }

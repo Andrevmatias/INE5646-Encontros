@@ -8,4 +8,10 @@ object ParametrosDeExecucao {
 	val maximoPessoasGeradas = 400000
 	val maximoPesquisaPesoasDesejadas = 100
 	val nomeDesenvolvedor = "André Victória Matias"
+	  
+	def toJson = {
+	  s"{maximoPessoas:$maximoPessoas, alturaMaxima:$alturaMaxima, alturaMinima:$alturaMinima," + 
+	  	s"maximoPessoasGeradas:$maximoPessoasGeradas, maximoPesquisaPesoasDesejadas:$maximoPesquisaPesoasDesejadas," +
+	  	s"nomeDesenvolvedor:$nomeDesenvolvedor}"
+	}
 }

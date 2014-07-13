@@ -19,8 +19,8 @@ object GeradorPessoas {
    * Como não é possível ter acesso ao construtor do ator, passa-se um objeto Props para o Factory de atores
    * (system.actorOf()) com os parâmetros de inicialização
    */
-  def props(criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, maximo: Int) 
-  	= Props(classOf[Pesquisador], criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, maximo: Int)
+  def props(repositorioPessoas: ActorRef, maximo: Int) 
+  	= Props(classOf[Pesquisador], repositorioPessoas: ActorRef, maximo: Int)
   
   //Trait para classificação de respostas
   trait RespostaGeradorPessoas
@@ -35,7 +35,7 @@ object GeradorPessoas {
 }
 
 
-class GeradorPessoas(criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, maximo: Int) 
+class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int) 
 	extends Actor {
 
   //Import tudo de GeradorPessoas
@@ -47,7 +47,7 @@ class GeradorPessoas(criterios: List[CriterioDePesquisa], repositorioPessoas: Ac
   val nomesSexos = Array(("André", 'M'), ("Eliete",'F'), ("Luany", 'F'), 
       ("Flavia", 'F'), ("Fabio", 'M'), ("Udson", 'M'), ("Luiz", 'M'), ("Natália", 'F'))
   val sobrenomes = Array("Matos", "Lourenço", 
-      "Meller", "Darós", "Pazzini", "Uribe", "Victória", "Matias") 
+      "Meller", "Darós", "Pazzini", "Uribe", "Victória", "Zannete") 
   
   def receive = {
     case Gerar(qtd: Int) => {
@@ -66,8 +66,8 @@ class GeradorPessoas(criterios: List[CriterioDePesquisa], repositorioPessoas: Ac
     val nomeSexo = nomesSexos(randomizer.nextInt(nomesSexos.length))
     val sobrenome = sobrenomes(randomizer.nextInt(sobrenomes.length)) + " " + sobrenomes(randomizer.nextInt(sobrenomes.length))
     val nomeCompleto = nomeSexo._1  + " " + sobrenome
-    val altura = randomizer.nextFloat() * rangeAltura + ParametrosDeExecucao.alturaMinima
+    val altura = randomizer.nextInt() * rangeAltura + ParametrosDeExecucao.alturaMinima
     val cpf = CpfUtils.gerarCpf
-    Pessoa(cpf, nomeCompleto, nomeSexo._2, altura)
+    Pessoa(cpf, nomeCompleto, nomeSexo._2.toString(), altura)
   }
 }

@@ -41,8 +41,8 @@ class Pesquisador(criterios: List[CriterioDePesquisa], repositorioPessoas: Actor
   private var firstSender : ActorRef = _
   
   def esperandoPessoas : Receive = {
-    case RepositorioPessoas.PessoasCadastradas(pessoas) => {
-      val pessoasCadastradas = criterios.foldLeft(pessoas)((pessoas, criterio) => criterio.aplicar(pessoas))
+    case RepositorioPessoas.PessoasLidas(pessoas) => {
+      val pessoasCadastradas = criterios.foldLeft(pessoas.toList)((pessoas, criterio) => criterio.aplicar(pessoas))
       registroDesejos ! RegistroDesejos.RegistreDesejos(pessoasCadastradas.map(pessoa => pessoa.cpf))
       firstSender ! PessoasEncontradas(pessoasCadastradas)
       unbecome()
