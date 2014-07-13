@@ -34,20 +34,26 @@ object Pesquisador {
 class Pesquisador(criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, registroDesejos: ActorRef) 
 	extends Actor {
 
-  //Import tudo de RepositorioPessoas
+  //Import tudo de Pesquisador
   import models.atores.Pesquisador._
+  import context._
+
+  private var firstSender : ActorRef = _
+  
+  def esperandoPessoas : Receive = {
+    case RepositorioPessoas.PessoasCadastradas(pessoas) => {
+      val pessoasCadastradas = criterios.foldLeft(pessoas)((pessoas, criterio) => criterio.aplicar(pessoas))
+      registroDesejos ! RegistroDesejos.RegistreDesejos(pessoasCadastradas.map(pessoa => pessoa.cpf))
+      firstSender ! PessoasEncontradas(pessoasCadastradas)
+      unbecome()
+    }
+  }
   
   def receive = {
     case Pesquisar(crits) => {
-      implicit val context = Akka.system.dispatcher
-      implicit val timeout = Timeout(10 seconds)
-      (repositorioPessoas ? RepositorioPessoas.List).mapTo[RepositorioPessoas.RespostaRepositorio].map(e => e match {
-        case RepositorioPessoas.PessoasCadastradas(pessoas) => {
-          val pessoasCadastradas = criterios.foldLeft(pessoas)((pessoas, criterio) => criterio.aplicar(pessoas))
-          registroDesejos ! RegistroDesejos.RegistreDesejos(pessoasCadastradas.map(pessoa => pessoa.cpf))
-          sender ! PessoasEncontradas(pessoasCadastradas)
-        }
-      })
+      firstSender = sender
+      become(esperandoPessoas)
+      repositorioPessoas ! RepositorioPessoas.List
     }
   } 
 }

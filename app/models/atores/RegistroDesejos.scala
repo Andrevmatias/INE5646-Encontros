@@ -2,19 +2,18 @@ package models.atores
 
 import scala.annotation.migration
 import scala.concurrent.duration._
-
 import org.omg.CORBA.Object
-
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import models.PessoaDesejada
 import play.api.libs.concurrent.Akka
+import scala.collection.immutable.ListMap
 
 //Objeto de "recursos" para o ator RegistroDesejos
 object RegistroDesejos {
   
-  //Método para criar as propriedades de um repositório
+  //Método para criar as propriedades de um ator
   /* No modelo de atores do akka, isto precisa ser feito caso existam parâmetros para inicializar um ator.
    * Como não é possível ter acesso ao construtor do ator, passa-se um objeto Props para o Factory de atores
    * (system.actorOf()) com os parâmetros de inicialização
@@ -29,14 +28,17 @@ object RegistroDesejos {
   //------------------------------------------
   case class RegistreDesejos(cpfs: List[Long])
   
-  case object PessoasDesejadasAoMenosUmaVez
-  case class PessoasDesejadas(pessoas: List[PessoaDesejada])
-  
   case object Count
   case class QuantidadeDePessoasDesejadas(qtd: Int)
   
   case object Clear
   case class DesejosRemovidos(qtd: Int)
+  
+  case object List
+  case class DesejosRegistrados(desejos: Map[Long, Int])
+  
+  case class ListMaisDesejadas(qtd: Int)
+  //DesejosRegistrados(desejos: Map[Long, Int])
   //------------------------------------------
 }
 
@@ -53,16 +55,8 @@ class RegistroDesejos(repositorioPessoas: ActorRef) extends Actor {
     case RegistreDesejos(cpfs) => cpfs.foreach(cpf => desejosPorCPF += cpf -> (desejosPorCPF(cpf) + 1))
     case Clear => { desejosPorCPF = Map() }
     case Count => sender ! QuantidadeDePessoasDesejadas(desejosPorCPF.size)
-    case PessoasDesejadasAoMenosUmaVez => { 
-      implicit val context = Akka.system.dispatcher
-      implicit val timeout = Timeout(10 seconds)
-      (repositorioPessoas ? RepositorioPessoas.List).mapTo[RepositorioPessoas.RespostaRepositorio].map(e => e match {
-        case RepositorioPessoas.PessoasCadastradas(pessoas) => {
-          val pessoasDesejadas = pessoas.map(pessoa => PessoaDesejada(pessoa, desejosPorCPF(pessoa.cpf)))
-          sender ! PessoasDesejadas(pessoasDesejadas)
-        }
-      })
-    }
+    case List => DesejosRegistrados(desejosPorCPF)
+    case ListMaisDesejadas(qtd) => DesejosRegistrados(ListMap(desejosPorCPF.toList sortBy {_._2} take(qtd):_*))
   }
 
 }

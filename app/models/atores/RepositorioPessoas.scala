@@ -30,9 +30,12 @@ object RepositorioPessoas {
   case object MaximoPessoasAtingido
   case class PessoaJaCadastrada(pessoa: Pessoa)
   
-  case class Get(cpf: Int)
+  case class Get(cpf: Long)
   case class PessoaLida(pessoa: Pessoa) extends RespostaRepositorio
-  case class PessoaNaoCadastrada(cpf: Int) extends RespostaRepositorio
+  case class PessoaNaoCadastrada(cpf: Long) extends RespostaRepositorio
+  
+  case class GetMany(cpfs: Iterable[Long])
+  case class PessoasLidas(pessoa: Iterable[Pessoa]) extends RespostaRepositorio
   
   case object Clear
   case class PessoasRemovidas(qtd: Int) extends RespostaRepositorio
@@ -73,6 +76,11 @@ class RepositorioPessoas(qtdMaximaPessoas: Int) extends Actor {
         sender ! PessoaLida(pessoas(cpf))
       else
         sender ! PessoaNaoCadastrada(cpf)
+    }
+    
+    case GetMany(cpfs) => {
+      val pessoasCadastradas = for(cpf <- cpfs) yield pessoas(cpf)
+      sender ! PessoasLidas(pessoasCadastradas)
     }
 
     case List => sender ! PessoasCadastradas(pessoas.values.toList)
