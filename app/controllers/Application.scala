@@ -19,6 +19,7 @@ import play.api.libs.json.Json
 import models.atores.Pesquisador
 import models.Pessoa
 import akka.actor.PoisonPill
+import utils.CpfUtils
 
 object Application extends Controller {
 
@@ -59,24 +60,10 @@ object Application extends Controller {
     }
   }
     
-    def leiaPessoa = Action.async { implicit request =>
+  def leiaPessoa = Action.async { implicit request =>
     implicit val timeout = Timeout(1 second)
 
-    def valideCPF(optCPF: Option[String]): Either[String, Int] = {
-      optCPF match {
-        case None => Left("CPF não definido")
-        case Some(sCPF) => {
-          if (sCPF.trim.length == 0) Left("CPF não definido")
-          else
-            Try(sCPF.toInt) match {
-              case Failure(_) => Left("CPF não é número")
-              case (Success(cpf)) => if (cpf < 1) Left("CPF deve ser maior que zero") else Right(cpf)
-            }
-        }
-      }
-    }
-
-    valideCPF(request.getQueryString("cpf")) match {
+    CpfUtils.valideCPF(request.getQueryString("cpf")) match {
       case Left(msgErro) => Future.successful(Ok(Json.obj("cod" -> "NOK", "erro" -> msgErro)))
       case Right(cpf) => {
         val futResp = (repositorio ? RepositorioPessoas.Get(cpf)).mapTo[RepositorioPessoas.RespostaRepositorio]
@@ -93,5 +80,4 @@ object Application extends Controller {
       }
     }
   }
-
 }

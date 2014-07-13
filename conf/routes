@@ -4,6 +4,17 @@
 
 # Home page
 GET     /                           controllers.Application.index
+GET		/leiaPessoa					controllers.Application.leiaPessoa
+POST	/pesquise					controllers.Application.pesquise
+POST	/cadastre					controllers.Application.cadastre
+GET		/listeMaisDesejadas		    controllers.Application.listeMaisDesejadas
+GET		/listeTodas				    controllers.Application.listeTodas
+GET		/desejadasAoMenosUmaVez		controllers.Application.desejadasAoMenosUmaVez
+POST	/gerePessoas				controllers.Application.gerePessoas
+GET		/mostreEstatisticas			controllers.Application.mostreEstatisticas
+GET		/mostreInformacoesSistema	controllers.Application.mostreInformacoesSistema
+DELETE	/apaguePesquisas			controllers.Application.apaguePesquisas
+DELETE  /apaguePessoas				controllers.Application.apaguePessoas
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

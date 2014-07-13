@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 import akka.pattern.ask
 import scala.util.Random
 import configuracao.ParametrosDeExecucao
+import utils.CpfUtils
 
 //Objeto de "recursos" para o ator GeradorPessoas
 object GeradorPessoas {
@@ -66,29 +67,7 @@ class GeradorPessoas(criterios: List[CriterioDePesquisa], repositorioPessoas: Ac
     val sobrenome = sobrenomes(randomizer.nextInt(sobrenomes.length)) + " " + sobrenomes(randomizer.nextInt(sobrenomes.length))
     val nomeCompleto = nomeSexo._1  + " " + sobrenome
     val altura = randomizer.nextFloat() * rangeAltura + ParametrosDeExecucao.alturaMinima
-    val cpf = gerarCpf
+    val cpf = CpfUtils.gerarCpf
     Pessoa(cpf, nomeCompleto, nomeSexo._2, altura)
-  }
-  
-  private def gerarCpf = {
-    val primeiros = (randomizer.nextInt(900000000) + 100000000).toLong
-    val digitos = gerarDigitos(primeiros)
-    (primeiros * 100) + digitos
-  }
-  private def gerarDigitos(primeiros: Long) ={
-    val primeirosString = primeiros.toString
-    var primeiroDigito: Int = 0
-	for(i <- 0 to 8)
-	  primeiroDigito += (i + 1) * primeirosString(i).toInt
-	primeiroDigito %= 11
-	primeiroDigito %= 10
-	
-	var segundoDigito: Int = 0
-	for(i <- 1 to 9)
-	  segundoDigito += i * primeirosString(i % 9).toInt
-	segundoDigito %= 11
-	segundoDigito %= 10
-    
-	primeiroDigito * 10 + segundoDigito
   }
 }

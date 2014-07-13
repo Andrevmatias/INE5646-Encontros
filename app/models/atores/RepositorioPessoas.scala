@@ -2,9 +2,7 @@ package models.atores
 
 import scala.annotation.migration
 
-import akka.actor.Actor
-import akka.actor.Props
-import akka.actor.actorRef2Scala
+import akka.actor._
 import configuracao.ParametrosDeExecucao
 import models.Pessoa
 import play.libs.Akka
@@ -65,10 +63,11 @@ class RepositorioPessoas(qtdMaximaPessoas: Int) extends Actor {
       }
     }
     case Clear => {
-      //Envia ("!" é um método) um objeto PessoasRemovidas com o número de pessoas removidas para quem chamou
-      sender ! PessoasRemovidas(pessoas.size)
+      val numeroPessoas = pessoas.size
       //Sobreescreve o mapeamento de pessoas com um Map vazio
       pessoas = Map()
+      //Envia ("!" é um método) um objeto PessoasRemovidas com o número de pessoas removidas para quem chamou
+      sender ! PessoasRemovidas(numeroPessoas)
     }
 
     case Get(cpf) => {
