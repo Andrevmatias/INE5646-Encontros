@@ -1,5 +1,29 @@
-<div ng-controller="CadastroCtrl" class="panel">
-	<h2>Cadastro</h2>
-
-	
+<div ng-controller="CadastroCtrl" class="panel panel-default">
+	<h2 class="panel-heading">Cadastro</h2>
+	<div class="panel-body">
+	<form action="cadastre" type="POST">
+		<div class="input-group">
+			<label for="cpf">CPF</label>
+			<input name="cpf" type="number" class="form-control" ng-model="pessoa.cpf">
+		</div>
+		<div class="input-group">
+			<label for="nome">Nome</label>
+			<input name="nome" type="text" class="form-control" ng-model="pessoa.nome">
+		</div>
+		<div class="input-group">
+			<label for="altura">Altura</label>
+			<input name="altura" type="number" class="form-control" ng-model="pessoa.altura">
+		</div>
+		<div class="radio">
+			<label class="radio-inline">
+				<input name="sexo" type="radio" class="form-control" value="M" ng-model="pessoa.sexo"> 
+				Masculino
+			</label>
+			<label class="radio-inline">
+				<input name="sexo" type="radio" class="form-control" value="F" ng-model="pessoa.sexo"> 
+				Feminino
+			</label>
+		</div>
+		<input type="submit" ng-click="cadastre(pessoa)" value="Cadastrar"/>
+	</form>
 </div>
