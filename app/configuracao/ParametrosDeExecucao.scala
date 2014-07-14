@@ -1,7 +1,7 @@
 package configuracao
 
 //Singleton com os parâmetros de execução do sistema conforme requisitos
-object ParametrosDeExecucao {
+case object ParametrosDeExecucao {
 	val maximoPessoas = 3000000
 	val alturaMaxima = 215
 	val alturaMinima= 140
@@ -10,8 +10,13 @@ object ParametrosDeExecucao {
 	val nomeDesenvolvedor = "André Victória Matias"
 	  
 	def toJson = {
-	  s"{maximoPessoas:$maximoPessoas, alturaMaxima:$alturaMaxima, alturaMinima:$alturaMinima," + 
-	  	s"maximoPessoasGeradas:$maximoPessoasGeradas, maximoPesquisaPesoasDesejadas:$maximoPesquisaPesoasDesejadas," +
-	  	s"nomeDesenvolvedor:$nomeDesenvolvedor}"
+	  Map(
+	     "maximoPessoas" -> maximoPessoas.toString,
+	     "alturaMaxima" -> alturaMaxima.toString,
+	     "alturaMinima" -> alturaMinima.toString,
+	     "maximoPessoasGeradas" -> maximoPessoasGeradas.toString, 
+	     "maximoPesquisaPesoasDesejadas" -> maximoPesquisaPesoasDesejadas.toString,
+	     "nomeDesenvolvedor" -> nomeDesenvolvedor
+	  )
 	}
 }

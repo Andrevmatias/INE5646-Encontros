@@ -2,7 +2,10 @@ package models
 
 object PessoaDesejada{
   def toJson(pessoaDesejada: PessoaDesejada)={
-    s"{pessoa:${Pessoa.toJson(pessoaDesejada.pessoa)},numeroDesejos:${pessoaDesejada.numeroDesejos}}"
+    Map(
+        "pessoa" -> Pessoa.toJson(pessoaDesejada.pessoa).toString,
+        "numeroDesejos" -> pessoaDesejada.numeroDesejos.toString
+    )
   }
 }
 

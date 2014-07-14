@@ -2,7 +2,12 @@ package models
 
 object Pessoa{
   def toJson(pessoa:Pessoa)={
-    s"{cpf:${pessoa.cpf},nome:${pessoa.nome},sexo:${pessoa.sexo},altura:${pessoa.altura}}"
+    Map(
+        "cpf" -> pessoa.cpf.toString,
+        "nome" -> pessoa.nome,
+        "sexo" -> pessoa.sexo,
+        "altura" -> pessoa.altura.toString
+    )
   }
 }
 

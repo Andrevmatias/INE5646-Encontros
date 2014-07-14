@@ -35,7 +35,7 @@ object Application extends Controller {
   val registroDesejos = Akka.system.actorOf(RegistroDesejos.props(repositorio))
   
   def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+    Ok(views.html.index("Encontros"))
   }
   
   def pesquise = Action.async { implicit request =>

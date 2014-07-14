@@ -1,7 +1,6 @@
 @(message: String)
-
-@main("Welcome to Play") {
-
-    @play20.welcome(message)
-
+@main(message){
+	<div ng-include="'assets/templates/menu.html'"></div>
+	
+	<div ng-include="currentTemplate"></div>
 }

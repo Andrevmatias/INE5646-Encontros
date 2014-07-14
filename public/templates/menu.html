@@ -1,0 +1,8 @@
+<div class="navbar" ng-controller="MenuCtrl">
+	<div class="navbar-header"><h1>Encontros</h1></div>
+	<ul>
+		<li ng-repeat="pagina in paginas">
+			<a href="#" ng-click="mudarTemplate(pagina.urlTemplate)">{{pagina.nome}}</a>
+		</li>
+	</ul>
+</div>
