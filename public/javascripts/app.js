@@ -52,7 +52,7 @@ encontrosApp.controller('PessoasCtrl', function ($scope, $http) {
 			if(data.cod === "NOK"){
 				alert(data.erro);
 			} else {
-				$scope.pessoas = data;
+				$scope.pessoas = data.pessoas;
 			}
 		});
 	};

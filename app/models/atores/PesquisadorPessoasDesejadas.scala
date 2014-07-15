@@ -3,13 +3,10 @@ package models.atores
 import scala.annotation.migration
 import scala.concurrent.duration._
 
-import org.omg.CORBA.Object
-
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import models.PessoaDesejada
-import play.api.libs.concurrent.Akka
 
 //Objeto de "recursos" para o ator PesquisadorPessoasDesejadas
 object PesquisadorPessoasDesejadas {

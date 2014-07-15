@@ -40,9 +40,13 @@ class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int)
 
   //Import tudo de GeradorPessoas
   import models.atores.GeradorPessoas._
+  import context._
   
   private val randomizer = Random
   private val rangeAltura = ParametrosDeExecucao.alturaMaxima - ParametrosDeExecucao.alturaMinima
+  private var countCadastradas = 0
+  private var qtdCadastrar = 0
+  private var firstSender: ActorRef =_
   
   val nomesSexos = Array(("André", 'M'), ("Eliete",'F'), ("Luany", 'F'), 
       ("Flavia", 'F'), ("Fabio", 'M'), ("Udson", 'M'), ("Luiz", 'M'), ("Natália", 'F'))
@@ -55,18 +59,34 @@ class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int)
         sender ! QuantidadeExcedeuMaximo(maximo)
       }else{
         //TODO Verificar se o cpf não foi duplicado
+		qtdCadastrar = qtd
+		firstSender = sender
+		become(esperandoRespostasPessoasCadastradas)
         for(i <- 1 to qtd)
           repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
-        sender ! PessoasRegistradas(qtd)
       }
     }
+  }
+  
+  def esperandoRespostasPessoasCadastradas: Receive = {
+	case RepositorioPessoas.PessoaCadastrada => {
+		countCadastradas += 1
+		if(countCadastradas == qtdCadastrar){
+			firstSender ! PessoasRegistradas(qtdCadastrar)
+			unbecome()
+		}
+	}
+	case _ => {
+		unbecome()
+		firstSender ! PessoasRegistradas(countCadastradas)
+	}
   }
   
   private def gerarPessoa = {
     val nomeSexo = nomesSexos(randomizer.nextInt(nomesSexos.length))
     val sobrenome = sobrenomes(randomizer.nextInt(sobrenomes.length)) + " " + sobrenomes(randomizer.nextInt(sobrenomes.length))
     val nomeCompleto = nomeSexo._1  + " " + sobrenome
-    val altura = randomizer.nextInt() * rangeAltura + ParametrosDeExecucao.alturaMinima
+    val altura = randomizer.nextInt(rangeAltura) + ParametrosDeExecucao.alturaMinima
     val cpf = CpfUtils.gerarCpf
     Pessoa(cpf, nomeCompleto, nomeSexo._2.toString(), altura)
   }

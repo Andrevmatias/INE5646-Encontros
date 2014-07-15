@@ -18,6 +18,7 @@ import play.api.mvc._
 import play.libs.Akka
 import utils.CpfUtils
 import controllers.Reads._
+import controllers.Writes._
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.JsSuccess
@@ -133,7 +134,7 @@ object Application extends Controller {
     val futResp = (repositorio ? RepositorioPessoas.List).mapTo[RepositorioPessoas.RespostaRepositorio]
     futResp.map(msg => msg match {
       case RepositorioPessoas.PessoasLidas(pessoas) => {
-          val r = for (pessoa <- pessoas) yield Pessoa.toJson(pessoa)
+          val r = for (pessoa <- pessoas) yield Json.toJson(pessoa)
           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
       }
     })

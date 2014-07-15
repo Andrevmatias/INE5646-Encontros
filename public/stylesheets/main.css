@@ -1,1 +1,2 @@
 h1, h2 { margin: 0; }
+#panel-pessoas { height: 400px; overflow: auto; }
