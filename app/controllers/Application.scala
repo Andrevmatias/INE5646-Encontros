@@ -92,7 +92,7 @@ object Application extends Controller {
     form.validate[Pessoa] match {
       case JsError(erros) => Future.successful(Ok(Json.obj("cod" -> "NOK", "erro" -> "Existem valores inválidos")))
       case JsSuccess(pessoa, _) => {
-        val futResp = (repositorio ? RepositorioPessoas.Save).mapTo[RepositorioPessoas.RespostaRepositorio]
+        val futResp = (repositorio ? RepositorioPessoas.Save(pessoa)).mapTo[RepositorioPessoas.RespostaRepositorio]
         futResp.map(msg => msg match {
           case RepositorioPessoas.PessoaCadastrada => Ok(Json.obj("cod" -> "OK"))
 		  case RepositorioPessoas.MaximoPessoasAtingido => 

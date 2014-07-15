@@ -20,7 +20,7 @@ object GeradorPessoas {
    * (system.actorOf()) com os parâmetros de inicialização
    */
   def props(repositorioPessoas: ActorRef, maximo: Int) 
-  	= Props(classOf[Pesquisador], repositorioPessoas: ActorRef, maximo: Int)
+  	= Props(classOf[GeradorPessoas], repositorioPessoas: ActorRef, maximo: Int)
   
   //Trait para classificação de respostas
   trait RespostaGeradorPessoas

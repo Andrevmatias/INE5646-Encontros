@@ -1,0 +1,32 @@
+<div ng-controller="PessoasCtrl" class="panel panel-default">
+	<h2 class="panel-heading">Pessoas</h2>
+	<div class="panel-body">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>CPF</th>
+					<th>Nome</th>
+					<th>Altura</th>
+					<th>Sexo</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="pessoa in pessoas">
+					<td>
+						{{pessoa.cpf}}
+					</td>
+					<td>
+						{{pessoa.nome}}
+					</td>
+					<td>
+						{{pessoa.altura}}
+					</td>
+					<td>
+						{{pessoa.sexo}}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<button class="btn btn-primary" ng-click="atualize()">Atualizar</button>
+	</div>
+</div>
