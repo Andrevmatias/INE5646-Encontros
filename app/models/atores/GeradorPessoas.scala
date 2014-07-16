@@ -45,8 +45,6 @@ class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int)
   private val randomizer = Random
   private val rangeAltura = ParametrosDeExecucao.alturaMaxima - ParametrosDeExecucao.alturaMinima
   private var countCadastradas = 0
-  private var qtdCadastrar = 0
-  private var firstSender: ActorRef =_
   
   val nomesSexos = Array(("André", 'M'), ("Eliete",'F'), ("Luany", 'F'), 
       ("Flavia", 'F'), ("Fabio", 'M'), ("Udson", 'M'), ("Luiz", 'M'), ("Natália", 'F'))
@@ -58,20 +56,17 @@ class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int)
       if(qtd > maximo){
         sender ! QuantidadeExcedeuMaximo(maximo)
       }else{
-        //TODO Verificar se o cpf não foi duplicado
-    		qtdCadastrar = qtd
-    		firstSender = sender
-    		become(esperandoRespostasPessoasCadastradas)
+    		become(esperandoRespostasPessoasCadastradas(sender, qtd))
         repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
       }
     }
   }
   
-  def esperandoRespostasPessoasCadastradas: Receive = {
+  def esperandoRespostasPessoasCadastradas(emissor: ActorRef, qtdCadastrar: Int): Receive = {
   	case RepositorioPessoas.PessoaCadastrada => {
   		countCadastradas += 1
   		if(countCadastradas == qtdCadastrar){
-  			firstSender ! PessoasRegistradas(qtdCadastrar)
+  			emissor ! PessoasRegistradas(qtdCadastrar)
   			unbecome()
   		} else {
         repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
@@ -80,7 +75,7 @@ class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int)
     case RepositorioPessoas.PessoaJaCadastrada(_) => repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
   	case RepositorioPessoas.MaximoPessoasAtingido => {
   		unbecome()
-  		firstSender ! PessoasRegistradas(countCadastradas)
+  		emissor ! PessoasRegistradas(countCadastradas)
   	}
   }
   

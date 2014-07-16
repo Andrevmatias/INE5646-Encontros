@@ -16,8 +16,8 @@ object Pesquisador {
    * Como não é possível ter acesso ao construtor do ator, passa-se um objeto Props para o Factory de atores
    * (system.actorOf()) com os parâmetros de inicialização
    */
-  def props(criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, registroDesejos: ActorRef) 
-  	= Props(classOf[Pesquisador], criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, registroDesejos: ActorRef)
+  def props(repositorioPessoas: ActorRef, registroDesejos: ActorRef) 
+  	= Props(classOf[Pesquisador], repositorioPessoas: ActorRef, registroDesejos: ActorRef)
   
   //Trait para classificação de respostas
   trait RespostaPesquisador
@@ -31,28 +31,25 @@ object Pesquisador {
 }
 
 
-class Pesquisador(criterios: List[CriterioDePesquisa], repositorioPessoas: ActorRef, registroDesejos: ActorRef) 
+class Pesquisador(repositorioPessoas: ActorRef, registroDesejos: ActorRef) 
 	extends Actor {
 
   //Import tudo de Pesquisador
   import models.atores.Pesquisador._
   import context._
-
-  private var firstSender : ActorRef = _
   
-  def esperandoPessoas : Receive = {
+  def esperandoPessoas(emissor: ActorRef, criterios: List[CriterioDePesquisa]) : Receive = {
     case RepositorioPessoas.PessoasLidas(pessoas) => {
       val pessoasCadastradas = criterios.foldLeft(pessoas.toList)((pessoas, criterio) => criterio.aplicar(pessoas))
       registroDesejos ! RegistroDesejos.RegistreDesejos(pessoasCadastradas.map(pessoa => pessoa.cpf))
-      firstSender ! PessoasEncontradas(pessoasCadastradas)
+      emissor ! PessoasEncontradas(pessoasCadastradas)
       unbecome()
     }
   }
   
   def receive = {
     case Pesquisar(crits) => {
-      firstSender = sender
-      become(esperandoPessoas)
+      become(esperandoPessoas(sender, crits))
       repositorioPessoas ! RepositorioPessoas.List
     }
   } 

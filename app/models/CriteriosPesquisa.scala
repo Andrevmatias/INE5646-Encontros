@@ -42,23 +42,21 @@ object ExtratorDeCriterios {
   def extraia(form: JsValue): Either[String, List[CriterioDePesquisa]] = {
     var listaCriterios = List[CriterioDePesquisa]()
     try{
-	    val alturaMinima = (form \ "altura-minima").as[Int]
-	    val alturaMaxima = (form \ "altura-maxima").as[Int]
-	    val nome = (form \ "nome").as[String]
-	    val sexo = (form \ "sexo").as[String]
-	    if(nome == "" && sexo == "" && alturaMaxima == 0 && alturaMinima == 0)
+	    val alturaMinima = (form \ "alturaMinima").asOpt[Int]
+	    val alturaMaxima = (form \ "alturaMaxima").asOpt[Int]
+	    val nome = (form \ "nome").asOpt[String]
+	    val sexo = (form \ "sexo").asOpt[String]
+	    if(nome.isEmpty && sexo.isEmpty && alturaMaxima.isEmpty && alturaMinima.isEmpty)
 	      Left("Especifique ao menos um filtro")
-	    else if(sexo != "" && sexo != "F" && sexo != "M")
+	    else if(!sexo.isEmpty && sexo.get != "F" && sexo.get != "M")
 	      Left("Sexo inválido")
 	    else {
-	      if(nome != "")
-	        listaCriterios = listaCriterios :+ CriterioNomeContendo(nome)
-	      if(sexo != "")
-	        listaCriterios = listaCriterios :+ CriterioSexo(sexo.toCharArray()(0))
-	      if(alturaMinima != 0 || alturaMaxima != 0)
-	        listaCriterios = listaCriterios :+ CriterioAltura(
-	            if (alturaMinima == 0) None else Some(alturaMinima), 
-	            if (alturaMaxima == 0) None else Some(alturaMaxima))
+	      if(!nome.isEmpty)
+	        listaCriterios = listaCriterios :+ CriterioNomeContendo(nome.get)
+	      if(!sexo.isEmpty)
+	        listaCriterios = listaCriterios :+ CriterioSexo(sexo.get.toCharArray()(0))
+	      if(!alturaMinima.isEmpty || !alturaMaxima.isEmpty)
+	        listaCriterios = listaCriterios :+ CriterioAltura(alturaMinima, alturaMaxima)
 	      Right(listaCriterios)
 	    }
     } catch {

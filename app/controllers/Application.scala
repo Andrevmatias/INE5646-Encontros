@@ -48,9 +48,9 @@ object Application extends Controller {
     ExtratorDeCriterios.extraia(form) match {
       case Left(msgsErro) => Future.successful(Ok(Json.obj("cod" -> "NOK", "erro" -> msgsErro)))
       case Right(criterios) => {
-        val pesquisador = Akka.system.actorOf(Pesquisador.props(criterios, repositorio, registroDesejos))
+        val pesquisador = Akka.system.actorOf(Pesquisador.props(repositorio, registroDesejos))
 
-        val futResp = (pesquisador ? Pesquisador.Pesquisar).mapTo[Pesquisador.PessoasEncontradas]
+        val futResp = (pesquisador ? Pesquisador.Pesquisar(criterios)).mapTo[Pesquisador.PessoasEncontradas]
 
         val resultado = futResp.map(msg => {
           val r = for (pessoa <- msg.pessoas) yield Pessoa.toJson(pessoa)

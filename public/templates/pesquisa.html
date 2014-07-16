@@ -36,7 +36,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr ng-repeat="pessoa in pessoasDesejadas">
+				<tr ng-repeat="pessoa in pessoas">
 					<td>
 						{{pessoa.cpf}}
 					</td>
@@ -52,11 +52,5 @@
 				</tr>
 			</tbody>
 		</table>
-	</div>
-</div>
-<div ng-controller="MaisDesejadosCtrl" class="panel panel-default">
-	<div class="panel-heading"><span>Top</span><input type="number" ng-model="numeroDesejadas" ng-change="atualize()"><span> mais desejadas</span></div>
-	<div class="panel-body">
-		
 	</div>
 </div>

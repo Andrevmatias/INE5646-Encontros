@@ -45,7 +45,6 @@ object RegistroDesejos {
 
 class RegistroDesejos(repositorioPessoas: ActorRef) extends Actor {
   import RegistroDesejos._
-  import play.api.Play.current
   
   // cpf da pessoa -> quantas vezes uma pessoa com aquele CPF foi desejada
   // se um CPF não está cadastrado então o valor retornado deve ser zero
@@ -59,8 +58,8 @@ class RegistroDesejos(repositorioPessoas: ActorRef) extends Actor {
       sender ! DesejosRemovidos(numeroDesejos)
     }
     case Count => sender ! QuantidadePessoasDesejadas(desejosPorCPF.size)
-    case List => DesejosRegistrados(desejosPorCPF)
-    case ListMaisDesejadas(qtd) => DesejosRegistrados(ListMap(desejosPorCPF.toList sortBy {_._2} take(qtd):_*))
+    case List => sender ! DesejosRegistrados(desejosPorCPF)
+    case ListMaisDesejadas(qtd) => sender ! DesejosRegistrados(ListMap(desejosPorCPF.toList sortBy {_._2} take(qtd):_*))
   }
 
 }
