@@ -9,13 +9,13 @@ import scala.util.Random
  * Utilitário para criação e validação de CPF
  */
 object CpfUtils {
-  def valideCPF(optCPF: Option[String]): Either[String, Int] = {
+  def valideCPF(optCPF: Option[String]): Either[String, Long] = {
     optCPF match {
       case None => Left("CPF não definido")
       case Some(sCPF) => {
         if (sCPF.trim.length == 0) Left("CPF não definido")
         else
-          Try(sCPF.toInt) match {
+          Try(sCPF.toLong) match {
             case Failure(_) => Left("CPF não é número")
             case (Success(cpf)) => if (cpf < 1) Left("CPF deve ser maior que zero") else Right(cpf)
           }

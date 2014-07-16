@@ -74,8 +74,8 @@ object Application extends Controller {
         val futResp = (repositorio ? RepositorioPessoas.Get(cpf)).mapTo[RepositorioPessoas.RespostaRepositorio]
 
         val resultado = futResp.map(resp => resp match {
-          case RepositorioPessoas.PessoaNaoCadastrada(cpf) => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não existe pessoa com este CPF"))
-          case RepositorioPessoas.PessoaLida(pessoa) => Ok(Json.obj("cod" -> "OK", "pessoa" -> Pessoa.toJson(pessoa)))
+          case RepositorioPessoas.PessoaNaoCadastrada(cpf) => Ok(Json.obj("cod" -> "NOK", "erro" -> ("Não existe pessoa com este CPF: " + cpf.toString())))
+          case RepositorioPessoas.PessoaLida(pessoa) => Ok(Json.obj("cod" -> "OK", "pessoa" -> Json.toJson(pessoa)))
         }) recover {
           case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu ler"))
         }
@@ -112,7 +112,7 @@ object Application extends Controller {
   }
   
   def listeMaisDesejadas = Action.async { implicit request =>
-    implicit val timeout = Timeout(10 second)
+    implicit val timeout = Timeout(10 seconds)
     request.getQueryString("qtd") match {
       case None => Future { Ok(Json.obj("cod" -> "NOK", "erro" -> "Digite uma quantidade válida")) }
       case Some(qtd) => {
@@ -121,7 +121,7 @@ object Application extends Controller {
         	.mapTo[PesquisadorPessoasDesejadas.RespostaPesquisadorPessoasDesejadas]
         futResp.map(msg => msg match {
           case PesquisadorPessoasDesejadas.PessoasDesejadas(pessoasDesejadas) => {
-	           val r = for (pessoa <- pessoasDesejadas) yield PessoaDesejada.toJson(pessoa)
+	           val r = for (pessoa <- pessoasDesejadas) yield Json.toJson(pessoa)
 	           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
           }
         })
@@ -148,7 +148,7 @@ object Application extends Controller {
     	.mapTo[PesquisadorPessoasDesejadas.RespostaPesquisadorPessoasDesejadas]
     futResp.map(msg => msg match {
       case PesquisadorPessoasDesejadas.PessoasDesejadas(pessoasDesejadas) => {
-           val r = for (pessoa <- pessoasDesejadas) yield PessoaDesejada.toJson(pessoa)
+           val r = for (pessoa <- pessoasDesejadas) yield Json.toJson(pessoa)
            Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
       }
     }).recover {
@@ -179,11 +179,11 @@ object Application extends Controller {
   }
   
   def mostreEstatisticas = Action.async { implicit request =>
-    implicit val timeout = Timeout(10 second)
+    implicit val timeout = Timeout(10 seconds)
 
     (for{
     	respRep <- (repositorio ? RepositorioPessoas.Count).mapTo[RepositorioPessoas.QuantidadePessoas]
-    	respDesej <- (registroDesejos ? RegistroDesejos.Count).mapTo[RepositorioPessoas.QuantidadePessoas]
+    	respDesej <- (registroDesejos ? RegistroDesejos.Count).mapTo[RegistroDesejos.QuantidadePessoasDesejadas]
     } yield {
       Ok(Json.obj("cod" -> "OK", "qtdPessoas" -> respRep.qtd, "qtdPesquisadas" -> respDesej.qtd))
     }).recover {

@@ -1,0 +1,42 @@
+<div ng-controller="EstatisticasCtrl" class="panel panel-default">
+	<h2 class="panel-heading">Par&acirc;metros</h2>
+	<div class="panel-body">
+		<p><h3>Pessoas</h3>{{estatisticas.qtdPessoas}}</p>
+		<p><h3>Desejadas</h3>{{estatisticas.qtdPesquisadas}}</p>
+	</div>
+	<div class="panel-footer">
+		<button class="btn btn-default" ng-click="apaguePesquisas()">Apagar Pesquisas</button>
+		<button class="btn btn-default" ng-click="apaguePessoas()">Apagar Pessoas</button>
+	</div>
+</div>
+<div ng-controller="MaisDesejadosCtrl" class="panel panel-default">
+	<div class="panel-heading"><span>Top</span><input type="number" ng-model="numeroDesejadas" ng-change="atualize()"><span> mais desejadas</span></div>
+	<div class="panel-body">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>CPF</th>
+					<th>Nome</th>
+					<th>Altura</th>
+					<th>Sexo</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="pessoa in pessoasDesejadas">
+					<td>
+						{{pessoa.cpf}}
+					</td>
+					<td>
+						{{pessoa.nome}}
+					</td>
+					<td>
+						{{pessoa.altura}}
+					</td>
+					<td>
+						{{pessoa.sexo}}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

@@ -17,7 +17,7 @@ object PesquisadorPessoasDesejadas {
    * (system.actorOf()) com os parâmetros de inicialização
    */
   def props(repositorioPessoas: ActorRef, registroDesejos: ActorRef) 
-  	= Props(classOf[RegistroDesejos], repositorioPessoas: ActorRef, registroDesejos: ActorRef)
+  	= Props(classOf[PesquisadorPessoasDesejadas], repositorioPessoas: ActorRef, registroDesejos: ActorRef)
 
   //Trait para classificação de respostas
   trait RespostaPesquisadorPessoasDesejadas
@@ -50,37 +50,35 @@ class PesquisadorPessoasDesejadas(repositorioPessoas: ActorRef, registroDesejos:
   //Estado inicial
   def receive = {
     case PessoasDesejadasAoMenosUmaVez => { 
-      firstSender = sender
       //Muda o estado do ator
-      become(esperandoDesejos)
+      become(esperandoDesejos(sender))
       registroDesejos ! RegistroDesejos.List
     }
     case PessoasMaisDesejadas(qtd) => { 
-      firstSender = sender
       //Muda o estado do ator
-      become(esperandoDesejos)
+      become(esperandoDesejos(sender))
       registroDesejos ! RegistroDesejos.ListMaisDesejadas(qtd)
     }
   }
   
   //Receptor de mensagens quando o ator está no estado "esperandoPessoas"
-  def esperandoPessoas : Receive = {
+  def esperandoPessoas(emissor: ActorRef) : Receive = {
     case PessoasLidas(pessoas) => {
     	val pessoasDesejadas = for(pessoa <- pessoas) yield PessoaDesejada(pessoa, desejos(pessoa.cpf))
-    	firstSender ! PessoasDesejadas(pessoasDesejadas)
+    	emissor ! PessoasDesejadas(pessoasDesejadas)
     	//Volta o ator para o estado anterior
     	unbecome()
     }
   }
   
   //Receptor de mensagens quando o ator está no estado "esperandoDesejos"
-  def esperandoDesejos : Receive = {
+  def esperandoDesejos(emissor: ActorRef) : Receive = {
     case DesejosRegistrados(desejosRegistrados) => {
     	desejos = desejosRegistrados
     	//Volta o ator para o estado anterior
     	unbecome()
     	//Muda o ator para o estado "esperandoPessoas"
-    	become(esperandoPessoas)
+    	become(esperandoPessoas(emissor))
     	repositorioPessoas ! RepositorioPessoas.GetMany(desejos.keys)
     }
   }

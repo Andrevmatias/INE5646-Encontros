@@ -1,0 +1,13 @@
+<div ng-controller="PessoaCtrl" class="panel panel-default">
+	<h2 class="panel-heading">Pessoa</h2>
+	<div class="panel-body">
+		<div class="form-group">
+			<label for="cpf">CPF</label>
+			<input name="cpf" type="number" class="form-control" ng-model="cpf">
+		</div>
+		<button class="btn btn-primary" ng-click="leia(cpf)">Pesquisar</button>
+		<p><h3>Nome</h3>{{pessoa.nome}}</p>
+		<p><h3>Altura</h3>{{pessoa.altura}}</p>
+		<p><h3>Sexo</h3>{{pessoa.sexo}}</p>
+	</div>
+</div>

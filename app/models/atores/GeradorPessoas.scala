@@ -59,27 +59,29 @@ class GeradorPessoas(repositorioPessoas: ActorRef, maximo: Int)
         sender ! QuantidadeExcedeuMaximo(maximo)
       }else{
         //TODO Verificar se o cpf não foi duplicado
-		qtdCadastrar = qtd
-		firstSender = sender
-		become(esperandoRespostasPessoasCadastradas)
-        for(i <- 1 to qtd)
-          repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
+    		qtdCadastrar = qtd
+    		firstSender = sender
+    		become(esperandoRespostasPessoasCadastradas)
+        repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
       }
     }
   }
   
   def esperandoRespostasPessoasCadastradas: Receive = {
-	case RepositorioPessoas.PessoaCadastrada => {
-		countCadastradas += 1
-		if(countCadastradas == qtdCadastrar){
-			firstSender ! PessoasRegistradas(qtdCadastrar)
-			unbecome()
-		}
-	}
-	case _ => {
-		unbecome()
-		firstSender ! PessoasRegistradas(countCadastradas)
-	}
+  	case RepositorioPessoas.PessoaCadastrada => {
+  		countCadastradas += 1
+  		if(countCadastradas == qtdCadastrar){
+  			firstSender ! PessoasRegistradas(qtdCadastrar)
+  			unbecome()
+  		} else {
+        repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
+      }
+  	}
+    case RepositorioPessoas.PessoaJaCadastrada(_) => repositorioPessoas ! RepositorioPessoas.Save(gerarPessoa)
+  	case RepositorioPessoas.MaximoPessoasAtingido => {
+  		unbecome()
+  		firstSender ! PessoasRegistradas(countCadastradas)
+  	}
   }
   
   private def gerarPessoa = {
