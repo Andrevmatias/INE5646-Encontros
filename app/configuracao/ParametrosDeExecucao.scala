@@ -9,7 +9,7 @@ case object ParametrosDeExecucao {
 	val maximoPesquisaPesoasDesejadas = 100
 	val nomeDesenvolvedor = "André Victória Matias"
 	  
-	def toJson = {
+	def toStringValueMap = {
 	  Map(
 	     "maximoPessoas" -> maximoPessoas.toString,
 	     "alturaMaxima" -> alturaMaxima.toString,

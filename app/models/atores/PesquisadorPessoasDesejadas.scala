@@ -7,6 +7,7 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import models.PessoaDesejada
+import configuracao.ParametrosDeExecucao
 
 //Objeto de "recursos" para o ator PesquisadorPessoasDesejadas
 object PesquisadorPessoasDesejadas {
@@ -27,6 +28,7 @@ object PesquisadorPessoasDesejadas {
   //------------------------------------------
   case object PessoasDesejadasAoMenosUmaVez
   case class PessoasDesejadas(pessoas: Iterable[PessoaDesejada]) extends RespostaPesquisadorPessoasDesejadas
+  case class QuantidadeExcedeuMaximo(maximo: Int) extends RespostaPesquisadorPessoasDesejadas
   
   case class PessoasMaisDesejadas(qtd: Int)
   //PessoasDesejadas(pessoas: Iterable[PessoaDesejada])
@@ -55,9 +57,13 @@ class PesquisadorPessoasDesejadas(repositorioPessoas: ActorRef, registroDesejos:
       registroDesejos ! RegistroDesejos.List
     }
     case PessoasMaisDesejadas(qtd) => { 
-      //Muda o estado do ator
-      become(esperandoDesejos(sender))
-      registroDesejos ! RegistroDesejos.ListMaisDesejadas(qtd)
+      if(qtd > ParametrosDeExecucao.maximoPesquisaPesoasDesejadas){
+        sender ! QuantidadeExcedeuMaximo(ParametrosDeExecucao.maximoPesquisaPesoasDesejadas)
+      } else {
+        //Muda o estado do ator
+        become(esperandoDesejos(sender))
+        registroDesejos ! RegistroDesejos.ListMaisDesejadas(qtd)
+      }
     }
   }
   

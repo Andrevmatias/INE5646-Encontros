@@ -10,13 +10,13 @@ import models.PessoaDesejada
  */
 object Writes {
  implicit val pessoaWrites: Writes[Pessoa] = (
-      (JsPath \ "cpf").write[Long] and
-      (JsPath \ "nome").write[String] and
-      (JsPath \ "sexo").write[String] and
-      (JsPath \ "altura").write[Int]
+      (__ \ "cpf").write[Long] and
+      (__ \ "nome").write[String] and
+      (__ \ "sexo").write[String] and
+      (__ \ "altura").write[Int]
   )(unlift(Pessoa.unapply))
   implicit val pessoaDesejadaWrites: Writes[PessoaDesejada] = (
-      (JsPath \ "pessoa").write[Pessoa] and
-      (JsPath \ "numeroDesejos").write[Int]
+      (__ \ "pessoa").write[Pessoa] and
+      (__ \ "numeroDesejos").write[Int]
   )(unlift(PessoaDesejada.unapply))
 }

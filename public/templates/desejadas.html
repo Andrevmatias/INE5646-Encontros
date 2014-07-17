@@ -1,0 +1,36 @@
+<div ng-controller="DesejadasCtrl" class="panel panel-default">
+	<div class="panel-heading"><h2 class="panel-title">Desejadas</h2></div>
+	<div class="panel-body scroll-panel">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>CPF</th>
+					<th>Nome</th>
+					<th>Altura</th>
+					<th>Sexo</th>
+					<th>Desejos</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="pessoaDesejada in pessoasDesejadas">
+					<td>
+						{{pessoaDesejada.pessoa.cpf}}
+					</td>
+					<td>
+						{{pessoaDesejada.pessoa.nome}}
+					</td>
+					<td>
+						{{pessoaDesejada.pessoa.altura}}
+					</td>
+					<td>
+						{{pessoaDesejada.pessoa.sexo}}
+					</td>
+					<td>
+						{{pessoaDesejada.numeroDesejos}}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="panel-footer"><button class="btn btn-primary" ng-click="atualize()">Atualizar</button></div>
+</div>

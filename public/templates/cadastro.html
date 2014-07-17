@@ -1,5 +1,5 @@
 <div ng-controller="CadastroCtrl" class="panel panel-default">
-	<h2 class="panel-heading">Cadastro</h2>
+	<div class="panel-heading"><h2 class="panel-title">Cadastro</h2></div>
 	<div class="panel-body">
 		<div class="form-group">
 			<label for="cpf">CPF</label>
@@ -28,5 +28,7 @@
 		</div>
 		<button class="btn btn-primary" ng-click="cadastre(pessoa)">Cadastrar</button>
 	</div>
-	<div class="panel-footer"><button class="btn btn-default" ng-click="gere()">Gerar Pessoas</button></div>
+	<div class="panel-footer">
+		<button class="btn btn-default" ng-click="gere()" ng-disabled="gerando">{{gerando ? "Gerando..." : "Gerar Pessoas"}}</button>
+	</div>
 </div>

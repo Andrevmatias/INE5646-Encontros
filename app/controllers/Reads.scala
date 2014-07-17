@@ -10,9 +10,9 @@ import models.Pessoa
  */
 object Reads {
  implicit val pessoaReads: Reads[Pessoa] = (
-      (JsPath \ "cpf").read[Long] and
-      (JsPath \ "nome").read[String] and
-      (JsPath \ "sexo").read[String] and
-      (JsPath \ "altura").read[Int]
+      (__ \ "cpf").read[Long] and
+      (__ \ "nome").read[String](minLength[String](1)) and
+      (__ \ "sexo").read[String] and
+      (__ \ "altura").read[Int]
   )(Pessoa.apply _)
 }

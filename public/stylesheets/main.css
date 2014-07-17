@@ -1,2 +1,2 @@
-h1, h2 { margin: 0; }
-#panel-pessoas { height: 400px; overflow: auto; }
+h1 { margin: 0; }
+.scroll-panel { height: 400px; overflow: auto; }

@@ -53,7 +53,7 @@ object Application extends Controller {
         val futResp = (pesquisador ? Pesquisador.Pesquisar(criterios)).mapTo[Pesquisador.PessoasEncontradas]
 
         val resultado = futResp.map(msg => {
-          val r = for (pessoa <- msg.pessoas) yield Pessoa.toJson(pessoa)
+          val r = for (pessoa <- msg.pessoas) yield Json.toJson(pessoa)
           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
         }).recover {
           case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu pesquisar"))
@@ -81,7 +81,6 @@ object Application extends Controller {
         }
 
         resultado
-
       }
     }
   }
@@ -96,15 +95,15 @@ object Application extends Controller {
         val futResp = (repositorio ? RepositorioPessoas.Save(pessoa)).mapTo[RepositorioPessoas.RespostaRepositorio]
         futResp.map(msg => msg match {
           case RepositorioPessoas.PessoaCadastrada => Ok(Json.obj("cod" -> "OK"))
-		  case RepositorioPessoas.MaximoPessoasAtingido => 
-		    Ok(Json.obj("cod" -> "NOK", "erro" -> "O máximo de pessoas cadastradas foi atingido"))
-		  case RepositorioPessoas.AlturaForaDosLimites(minima, maxima) => 
-		    Ok(Json.obj("cod" -> "NOK", "erro" -> s"A altura está fora dos limtes: $minima - $maxima"))
-		  case RepositorioPessoas.PessoaJaCadastrada(pessoa) => 
-		    Ok(Json.obj("cod" -> "NOK", "erro" -> "Pessoa já cadastrada", "pessoa" -> Pessoa.toJson(pessoa)))
-		  case RepositorioPessoas.PessoaComMesmoNomeDesenvolvedor(nomeDesenvolvedor) => 
-		    Ok(Json.obj("cod" -> "NOK", "erro" -> s"O desenvolvedor não pode ser cadastrado: $nomeDesenvolvedor"))
-        }).recover {
+  		  case RepositorioPessoas.MaximoPessoasAtingido => 
+  		    Ok(Json.obj("cod" -> "NOK", "erro" -> "O máximo de pessoas cadastradas foi atingido"))
+  		  case RepositorioPessoas.AlturaForaDosLimites(minima, maxima) => 
+  		    Ok(Json.obj("cod" -> "NOK", "erro" -> s"A altura está fora dos limtes: $minima - $maxima"))
+  		  case RepositorioPessoas.PessoaJaCadastrada(pessoa) => 
+  		    Ok(Json.obj("cod" -> "NOK", "erro" -> ("Uma pessoa já foi cadastrada com este CPF: " + pessoa.nome)))
+  		  case RepositorioPessoas.PessoaComMesmoNomeDesenvolvedor(nomeDesenvolvedor) => 
+  		    Ok(Json.obj("cod" -> "NOK", "erro" -> s"O desenvolvedor não pode ser cadastrado: $nomeDesenvolvedor"))  
+          }).recover {
           case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu cadastrar"))
         }
       }
@@ -119,12 +118,20 @@ object Application extends Controller {
         val pesquisador = Akka.system.actorOf(PesquisadorPessoasDesejadas.props(repositorio, registroDesejos))
         val futResp = (pesquisador ? PesquisadorPessoasDesejadas.PessoasMaisDesejadas(qtd.toInt))
         	.mapTo[PesquisadorPessoasDesejadas.RespostaPesquisadorPessoasDesejadas]
-        futResp.map(msg => msg match {
+        val resultado = futResp.map(msg => msg match {
           case PesquisadorPessoasDesejadas.PessoasDesejadas(pessoasDesejadas) => {
 	           val r = for (pessoa <- pessoasDesejadas) yield Json.toJson(pessoa)
 	           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
           }
-        })
+          case PesquisadorPessoasDesejadas.QuantidadeExcedeuMaximo(maximo) => {
+             Ok(Json.obj("cod" -> "NOK", "erro" -> ("O máximo a ser pesquisado é " + maximo.toString + ".")))
+          }
+        }).recover {
+          case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu pesquisar"))
+        }
+        futResp.onComplete { case _ => pesquisador ! PoisonPill }
+
+        resultado
       }
     }
   }
@@ -137,7 +144,9 @@ object Application extends Controller {
           val r = for (pessoa <- pessoas) yield Json.toJson(pessoa)
           Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
       }
-    })
+    }).recover {
+      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu listar"))
+    }
   }
   
   def desejadasAoMenosUmaVez = Action.async { implicit request =>
@@ -146,7 +155,7 @@ object Application extends Controller {
     val pesquisador = Akka.system.actorOf(PesquisadorPessoasDesejadas.props(repositorio, registroDesejos))
     val futResp = (pesquisador ? PesquisadorPessoasDesejadas.PessoasDesejadasAoMenosUmaVez)
     	.mapTo[PesquisadorPessoasDesejadas.RespostaPesquisadorPessoasDesejadas]
-    futResp.map(msg => msg match {
+    val resultado = futResp.map(msg => msg match {
       case PesquisadorPessoasDesejadas.PessoasDesejadas(pessoasDesejadas) => {
            val r = for (pessoa <- pessoasDesejadas) yield Json.toJson(pessoa)
            Ok(Json.obj("cod" -> "OK", "pessoas" -> Json.toJson(r)))
@@ -154,10 +163,13 @@ object Application extends Controller {
     }).recover {
       case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu recuperar desejados"))
     }
+    futResp.onComplete { case _ => pesquisador ! PoisonPill }
+
+    resultado
   }
   
   def gerePessoas = Action.async { implicit request =>
-    implicit val timeout = Timeout(10 seconds)
+    implicit val timeout = Timeout(20 seconds)
 
     val form = request.body.asJson.get
     form.validate[Int] match {
@@ -165,15 +177,18 @@ object Application extends Controller {
       case JsSuccess(qtd, _) => {
         val gerador = Akka.system.actorOf(GeradorPessoas.props(repositorio, ParametrosDeExecucao.maximoPessoasGeradas))
         val futResp = (gerador ? GeradorPessoas.Gerar(qtd)).mapTo[GeradorPessoas.RespostaGeradorPessoas]
-	    futResp.map(msg => msg match {
-	      case GeradorPessoas.QuantidadeExcedeuMaximo(maximo) => 
-	        Ok(Json.obj("cod" -> "NOK", "erro" -> s"A quantidade não pode passar de $maximo"))
-	      case GeradorPessoas.PessoasRegistradas(qtdGeradas) => {
-	           Ok(Json.obj("cod" -> "OK", "qtdGeradas" -> qtdGeradas))
-	      }
-	    }).recover {
-	      case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu gerar pessoas"))
-	    }
+  	    val resultado = futResp.map(msg => msg match {
+  	      case GeradorPessoas.QuantidadeExcedeuMaximo(maximo) => 
+  	        Ok(Json.obj("cod" -> "NOK", "erro" -> s"A quantidade não pode passar de $maximo"))
+  	      case GeradorPessoas.PessoasRegistradas(qtdGeradas) => {
+  	           Ok(Json.obj("cod" -> "OK", "qtdGeradas" -> qtdGeradas))
+  	      }
+        }).recover {
+	         case _ => Ok(Json.obj("cod" -> "NOK", "erro" -> "Não conseguiu gerar pessoas"))
+  	    }
+        futResp.onComplete { case _ => gerador ! PoisonPill }
+
+        resultado
       }
     }
   }
@@ -192,7 +207,7 @@ object Application extends Controller {
   }
   
   def mostreInformacoesSistema = Action { implicit request =>
-    Ok(Json.toJson(ParametrosDeExecucao.toJson))
+    Ok(Json.toJson(ParametrosDeExecucao.toStringValueMap))
   }
   
   def apaguePessoas = Action.async { implicit request =>

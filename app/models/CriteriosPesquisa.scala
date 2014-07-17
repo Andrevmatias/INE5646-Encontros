@@ -25,17 +25,17 @@ case class CriterioAltura(min: Option[Int], max: Option[Int]) extends CriterioDe
     }
   }
 }
-case class CriterioSexo(s: Char) extends CriterioDePesquisa{
+case class CriterioSexo(sx: String) extends CriterioDePesquisa{
   def aplicar(pessoas: List[Pessoa]):List[Pessoa] = {
-    if(s == 'M' || s == 'F')
-      pessoas filter(pessoa => pessoa.sexo == s)
+    if(sx == "M" || sx == "F")
+      pessoas filter(pessoa => pessoa.sexo == sx)
     else
       List()
   }
 }
 case class CriterioNomeContendo(fragNome: String) extends CriterioDePesquisa{
   def aplicar(pessoas: List[Pessoa]):List[Pessoa] = {
-      pessoas filter(pessoa => pessoa.nome.contains(fragNome))
+      pessoas filter(pessoa => pessoa.nome.toLowerCase.contains(fragNome.toLowerCase))
   }
 }
 object ExtratorDeCriterios {
@@ -54,7 +54,7 @@ object ExtratorDeCriterios {
 	      if(!nome.isEmpty)
 	        listaCriterios = listaCriterios :+ CriterioNomeContendo(nome.get)
 	      if(!sexo.isEmpty)
-	        listaCriterios = listaCriterios :+ CriterioSexo(sexo.get.toCharArray()(0))
+	        listaCriterios = listaCriterios :+ CriterioSexo(sexo.get)
 	      if(!alturaMinima.isEmpty || !alturaMaxima.isEmpty)
 	        listaCriterios = listaCriterios :+ CriterioAltura(alturaMinima, alturaMaxima)
 	      Right(listaCriterios)

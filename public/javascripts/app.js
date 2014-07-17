@@ -12,6 +12,7 @@ encontrosApp.controller('MenuCtrl', function ($scope, $rootScope) {
 		{nome: "Cadastro", urlTemplate: "assets/templates/cadastro.html"},
 		{nome: "Pessoa", urlTemplate: "assets/templates/pessoa.html"},
 		{nome: "Pessoas", urlTemplate: "assets/templates/pessoas.html"},
+		{nome: "Desejadas", urlTemplate: "assets/templates/desejadas.html"},
 		{nome: "Pesquisa", urlTemplate: "assets/templates/pesquisa.html"},
 		{nome: "Informações", urlTemplate: "assets/templates/parametros.html"}
 	]
@@ -22,29 +23,29 @@ encontrosApp.controller('MenuCtrl', function ($scope, $rootScope) {
 });
 
 encontrosApp.controller('CadastroCtrl', function ($scope, $http) {
+	$scope.pessoa = {};
 	$scope.cadastre = function(pessoa){
 		$http.post('cadastre', pessoa).success(function(data){
 			if(data.cod === "NOK"){
 				alert(data.erro);
 			} else {
-				alert("Pessoa cadastrada")
+				$scope.pessoa = {};
+				alert("Pessoa cadastrada");
 			}
 		});
 	}
-	$scope.gere = function(pessoa){
+	$scope.gere = function(){
 		var qtd = prompt("Quantas pessoas devem ser geradas?");
 		if(qtd != null){
-			if(qtd != "" && !isNaN(qtd)){
-				$http.post('gerePessoas', +qtd).success(function(data){
-					if(data.cod === "NOK"){
-						alert(data.erro);
-					} else {
-						alert(data.qtdGeradas + " Pessoas geradas com sucesso")
-					}
-				});
-			} else {
-				alert("Quantidadade inválida");
-			}
+			$scope.gerando = true;
+			$http.post('gerePessoas', +qtd).success(function(data){
+				if(data.cod === "NOK"){
+					alert(data.erro);
+				} else {
+					alert(data.qtdGeradas + " Pessoas geradas com sucesso")
+				}
+				$scope.gerando = false;
+			});
 		}
 	}
 });
@@ -56,6 +57,19 @@ encontrosApp.controller('PessoasCtrl', function ($scope, $http) {
 				alert(data.erro);
 			} else {
 				$scope.pessoas = data.pessoas;
+			}
+		});
+	};
+	$scope.atualize();
+});
+
+encontrosApp.controller('DesejadasCtrl', function ($scope, $http) {
+	$scope.atualize = function(){
+		$http.get('desejadasAoMenosUmaVez').success(function(data){
+			if(data.cod === "NOK"){
+				alert(data.erro);
+			} else {
+				$scope.pessoasDesejadas = data.pessoas;
 			}
 		});
 	};
@@ -89,7 +103,8 @@ encontrosApp.controller('EstatisticasCtrl', function ($scope, $http) {
 			if(data.cod === "NOK"){
 				alert(data.erro);
 			} else {
-		    	alert("Pessoas excluídas com sucesso");
+		    	alert(data.qtdPessoas + " pessoas excluídas com sucesso");
+		    	$scope.atualize();
 		    }
 		});
 	};
@@ -98,7 +113,8 @@ encontrosApp.controller('EstatisticasCtrl', function ($scope, $http) {
 			if(data.cod === "NOK"){
 				alert(data.erro);
 			} else {
-		    	alert("Pesquisas excluídas com sucesso");
+		    	alert("Pesquisas excluídas com sucesso. " + data.qtdPessoas + " pessoas afetadas.");
+		    	$scope.atualize();
 		    }
 		});
 	};
@@ -112,7 +128,7 @@ encontrosApp.controller('MaisDesejadosCtrl', function ($scope, $http) {
 			if(data.cod === "NOK"){
 				alert(data.erro);
 			} else {
-				$scope.pessoas = data.pessoas;
+				$scope.pessoasDesejadas = data.pessoas;
 			}
 		});
 	};
@@ -120,6 +136,7 @@ encontrosApp.controller('MaisDesejadosCtrl', function ($scope, $http) {
 });
 
 encontrosApp.controller('PesquisaCtrl', function ($scope, $http) {
+	$scope.criterios = {};
 	$scope.pesquise = function(criterios){
 		$http.post('pesquise', criterios).success(function(data){
 			if(data.cod === "NOK"){
